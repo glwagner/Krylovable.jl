@@ -52,12 +52,10 @@ end
 end
 
 function compute_laplacian!(∇²ϕ, ϕ)
-    parent(ϕ) .-= mean(interior(ϕ))
     fill_halo_regions!(ϕ)
     grid = ϕ.grid
     arch = architecture(grid)
     launch!(arch, grid, :xyz, laplacian!, ∇²ϕ, grid, ϕ)
-    parent(∇²ϕ) .-= mean(interior(∇²ϕ))
     return nothing
 end
 
