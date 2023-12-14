@@ -1,2 +1,2 @@
 # Krylovable.jl
-Everyone loves Krylov
+Everyone loves Krylov(.jl)
