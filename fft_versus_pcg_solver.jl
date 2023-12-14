@@ -65,18 +65,19 @@ bc .= interior(b)
 
 include("preconditioned_conjugate_gradient_poisson_solver.jl")
 
-# I can't get the following to work... not sure why.
+# Note: this won't work unless the "diagonally-dominant" preconditioner is used
+# (which is the default for preconditioned_conjugate_gradient_poisson_solver)
 xpcg = CenterField(grid)
 pcg_solver = preconditioned_conjugate_gradient_poisson_solver(grid, xpcg; maxiter = 1000)
 
-parent(xpcg) .= 0 #arent(xfft)
 solve!(xpcg, pcg_solver, b)
 
-parent(xpcg) .= 0 #parent(xfft)
+# Zero the solution for fairness
+parent(xpcg) .= 0
 @time solve!(xpcg, pcg_solver, b)
 
 #####
-##### Visualize the results, including residual
+##### Visualize the results, including residuals
 #####
 
 using GLMakie
@@ -91,6 +92,7 @@ rpcg = interior(∇²x) .- interior(b)
 @info "PCG solver iterations: " * string(pcg_solver.iteration)
 @info "Max PCG residual: " * string(maximum(rpcg))
 
+# Look at yz-slices:
 b_cpu    = Array(interior(b, 1, :, :))
 xfft_cpu = Array(interior(xfft, 1, :, :))
 xpcg_cpu = Array(interior(xpcg, 1, :, :))
