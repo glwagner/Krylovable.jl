@@ -46,6 +46,31 @@ end
     @inbounds P_r[i, j, k] = heuristic_inverse_times_residuals(i, j, k, grid, r)
 end
 
+#=
+# Here's the source code implementation of ∇²ᶜᶜᶜ::::
+"""
+    ∇²ᶜᶜᶜ(i, j, k, grid, c)
+
+Calculate the Laplacian of ``c`` via
+
+```julia
+1/V * [δxᶜᵃᵃ(Ax * ∂xᶠᵃᵃ(c)) + δyᵃᶜᵃ(Ay * ∂yᵃᶠᵃ(c)) + δzᵃᵃᶜ(Az * ∂zᵃᵃᶠ(c))]
+```
+
+which ends up at the location `ccc`.
+"""
+@inline function ∇²ᶜᶜᶜ(i, j, k, grid, c)
+    return 1/Vᶜᶜᶜ(i, j, k, grid) * (δxᶜᵃᵃ(i, j, k, grid, Ax_∂xᶠᶜᶜ, c) +
+                                    δyᵃᶜᵃ(i, j, k, grid, Ay_∂yᶜᶠᶜ, c) +
+                                    δzᵃᵃᶜ(i, j, k, grid, Az_∂zᶜᶜᶠ, c))
+end
+
+# See here:
+#
+# https://github.com/CliMA/Oceananigans.jl/blob/1b4736614d3528d6a7b5cad00459bacad580052c/src/Operators/laplacian_operators.jl#L36
+
+=#
+
 @kernel function laplacian!(∇²ϕ, grid, ϕ)
     i, j, k = @index(Global, NTuple)
     @inbounds ∇²ϕ[i, j, k] = ∇²ᶜᶜᶜ(i, j, k, grid, ϕ)
