@@ -132,5 +132,5 @@ function krylov_pcg_poisson_solver(grid, rhs=CenterField(grid);
     # P is not symmetric positive definite!
     # Krylov.cg!(solver, A, b, M=P, verbose=verbose, atol=abstol, rtol=reltol)
     Krylov.cg!(solver, A, b, verbose=verbose, atol=abstol, rtol=reltol)
-    return solver.x, solver.stats.niter
+    return solver.x.field, solver.stats.niter
 end
