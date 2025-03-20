@@ -134,3 +134,20 @@ function krylov_pcg_poisson_solver(grid, rhs=CenterField(grid);
     Krylov.cg!(solver, A, b, verbose=verbose, atol=abstol, rtol=reltol)
     return solver.x.field, solver.stats.niter
 end
+
+include("krylov_solver.jl")
+
+function krylov_pcg_poisson_solver2(grid, rhs=CenterField(grid);
+                                    preconditioner = DiagonallyDominantPreconditioner(),
+                                    reltol = sqrt(eps(eltype(grid))),
+                                    abstol = 0.0,
+                                    kw...)
+
+    solver = KrylovSolver(compute_laplacian!;
+                          template_field = rhs,
+                          reltol,
+                          abstol,
+                          kw...)
+
+    return solver
+end
