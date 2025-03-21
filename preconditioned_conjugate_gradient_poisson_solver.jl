@@ -1,7 +1,7 @@
 using Oceananigans.Operators
 using Oceananigans.Architectures: architecture
 using Oceananigans.BoundaryConditions: fill_halo_regions!
-using Oceananigans.Solvers: ConjugateGradientSolver, KrylovField
+using Oceananigans.Solvers: ConjugateGradientSolver, KrylovSolver
 using Oceananigans.Utils: launch!
 
 using KernelAbstractions
@@ -17,10 +17,6 @@ struct DiagonallyDominantPreconditioner end
     arch = architecture(grid)
     launch!(arch, grid, :xyz, _MITgcm_precondition!, P_r, grid, r)
     return P_r
-end
-
-function LinearAlgebra.mul!(y::KrylovField, P::DiagonallyDominantPreconditioner, x::KrylovField)
-    precondition!(y.field, P, x.field)
 end
 
 # Helper functions for calculating the coefficients of the "MITgcm" preconditioner
@@ -104,44 +100,11 @@ function preconditioned_conjugate_gradient_poisson_solver(grid, rhs=CenterField(
     return pcg_solver
 end
 
-## Krylov.jl
-struct LaplacianOperator
-    m::Int
-    n::Int
-end
-
-Base.size(A::LaplacianOperator) = (A.m, A.n)
-Base.eltype(A::LaplacianOperator) = Float64
-
-function LinearAlgebra.mul!(y::KrylovField, A::LaplacianOperator, x::KrylovField)
-    compute_laplacian!(y.field, x.field)
-end
-
-function krylov_pcg_poisson_solver(grid, rhs=CenterField(grid);
-                                   P = DiagonallyDominantPreconditioner(),
-                                   reltol = sqrt(eps(eltype(grid))),
-                                   abstol = zero(eltype(grid)),
-                                   verbose = 0,
-                                   kw...)
-
-    n = length(rhs)
-    A = LaplacianOperator(n,n)
-    b = KrylovField(rhs)
-    kc = Krylov.KrylovConstructor(b)
-    solver = Krylov.CgSolver(kc)
-    # P is not symmetric positive definite!
-    # Krylov.cg!(solver, A, b, M=P, verbose=verbose, atol=abstol, rtol=reltol)
-    Krylov.cg!(solver, A, b, verbose=verbose, atol=abstol, rtol=reltol)
-    return solver.x.field, solver.stats.niter
-end
-
-include("krylov_solver.jl")
-
-function krylov_pcg_poisson_solver2(grid, rhs=CenterField(grid);
-                                    preconditioner = DiagonallyDominantPreconditioner(),
-                                    reltol = sqrt(eps(eltype(grid))),
-                                    abstol = 0.0,
-                                    kw...)
+function krylov_solver(grid, rhs=CenterField(grid);
+                       preconditioner = DiagonallyDominantPreconditioner(),
+                       reltol = sqrt(eps(eltype(grid))),
+                       abstol = 0,
+                       kw...)
 
     solver = KrylovSolver(compute_laplacian!;
                           template_field = rhs,
