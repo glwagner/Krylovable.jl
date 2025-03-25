@@ -95,6 +95,7 @@ function preconditioned_conjugate_gradient_poisson_solver(grid, rhs=CenterField(
                                          template_field = rhs,
                                          reltol,
                                          abstol,
+                                         preconditioner,
                                          kw...)
 
     return pcg_solver
