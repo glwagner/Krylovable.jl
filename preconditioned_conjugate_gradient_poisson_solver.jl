@@ -86,13 +86,14 @@ function compute_laplacian!(∇²ϕ, ϕ)
 end
 
 function preconditioned_conjugate_gradient_poisson_solver(grid, rhs=CenterField(grid);
-                                                          preconditioner = DiagonallyDominantPreconditioner(),
+                                                          preconditioner = nothing, # DiagonallyDominantPreconditioner(),
                                                           reltol = sqrt(eps(eltype(grid))),
                                                           abstol = 0,
                                                           kw...)
 
     pcg_solver = ConjugateGradientSolver(compute_laplacian!;
                                          template_field = rhs,
+                                         preconditioner,
                                          reltol,
                                          abstol,
                                          preconditioner,
@@ -102,13 +103,14 @@ function preconditioned_conjugate_gradient_poisson_solver(grid, rhs=CenterField(
 end
 
 function krylov_solver(grid, rhs=CenterField(grid);
-                       preconditioner = DiagonallyDominantPreconditioner(),
+                       preconditioner = nothing, # DiagonallyDominantPreconditioner(),
                        reltol = sqrt(eps(eltype(grid))),
                        abstol = 0,
                        kw...)
 
     solver = KrylovSolver(compute_laplacian!;
                           template_field = rhs,
+                          preconditioner,
                           reltol,
                           abstol,
                           kw...)
