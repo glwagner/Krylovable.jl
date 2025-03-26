@@ -1,10 +1,11 @@
 using Oceananigans.Operators
 using Oceananigans.Architectures: architecture
 using Oceananigans.BoundaryConditions: fill_halo_regions!
-using Oceananigans.Solvers: PreconditionedConjugateGradientSolver
+using Oceananigans.Solvers: ConjugateGradientSolver, KrylovSolver
 using Oceananigans.Utils: launch!
 
 using KernelAbstractions
+import Krylov
 
 import Oceananigans.Solvers: precondition!
 
@@ -85,17 +86,34 @@ function compute_laplacian!(∇²ϕ, ϕ)
 end
 
 function preconditioned_conjugate_gradient_poisson_solver(grid, rhs=CenterField(grid);
-                                                          preconditioner = DiagonallyDominantPreconditioner(),
+                                                          preconditioner = nothing, # DiagonallyDominantPreconditioner(),
                                                           reltol = sqrt(eps(eltype(grid))),
                                                           abstol = 0,
                                                           kw...)
 
-    pcg_solver = PreconditionedConjugateGradientSolver(compute_laplacian!;
-                                                       template_field = rhs,
-                                                       reltol,
-                                                       abstol,
-                                                       kw...)
+    pcg_solver = ConjugateGradientSolver(compute_laplacian!;
+                                         template_field = rhs,
+                                         preconditioner,
+                                         reltol,
+                                         abstol,
+                                         preconditioner,
+                                         kw...)
 
     return pcg_solver
 end
 
+function krylov_solver(grid, rhs=CenterField(grid);
+                       preconditioner = nothing, # DiagonallyDominantPreconditioner(),
+                       reltol = sqrt(eps(eltype(grid))),
+                       abstol = 0,
+                       kw...)
+
+    solver = KrylovSolver(compute_laplacian!;
+                          template_field = rhs,
+                          preconditioner,
+                          reltol,
+                          abstol,
+                          kw...)
+
+    return solver
+end
